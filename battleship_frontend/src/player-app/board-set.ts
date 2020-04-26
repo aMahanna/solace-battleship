@@ -1,7 +1,15 @@
 import { inject } from "aurelia-framework";
 import { Router } from "aurelia-router";
 import { SolaceClient } from "common/solace-client";
-import { BoardSetEvent, Player, PlayerName, PrivateBoardCellState, KnownBoardCellState, TopicHelper, BoardSetResult } from "../common/events";
+import {
+  BoardSetEvent,
+  Player,
+  PlayerName,
+  PrivateBoardCellState,
+  KnownBoardCellState,
+  TopicHelper,
+  BoardSetResult,
+} from "../common/events";
 import { GameParams } from "common/game-params";
 
 /**
@@ -16,7 +24,13 @@ export class BoardSet {
   private donePlacing: boolean = false;
   private error: string = "";
 
-  constructor(private router: Router, private solaceClient: SolaceClient, private player: Player, private gameParams: GameParams, private topicHelper: TopicHelper) {
+  constructor(
+    private router: Router,
+    private solaceClient: SolaceClient,
+    private player: Player,
+    private gameParams: GameParams,
+    private topicHelper: TopicHelper
+  ) {
     // initialize empty boards
     let playerBoard: PrivateBoardCellState[][] = [];
     let knownOpponentBoard: KnownBoardCellState[][] = [];
@@ -34,7 +48,11 @@ export class BoardSet {
     this.player.isTurn = false;
 
     //WARM-UP THE BOARD-SET-REPLY SUBSCRIPTION
-    this.solaceClient.subscribeReply(`${this.topicHelper.prefix}/BOARD-SET-REPLY/${this.player.getPlayerNameForTopic()}/CONTROLLER`);
+    this.solaceClient.subscribeReply(
+      `${
+        this.topicHelper.prefix
+      }/BOARD-SET-REPLY/${this.player.getPlayerNameForTopic()}/CONTROLLER`
+    );
   }
 
   /**
@@ -50,7 +68,9 @@ export class BoardSet {
           alert("No ships remaining, remove one first!");
           return;
         }
-        let tmpBoard = JSON.parse(JSON.stringify(this.player.internalBoardState)); // a lazy man's deep copy
+        let tmpBoard = JSON.parse(
+          JSON.stringify(this.player.internalBoardState)
+        ); // a lazy man's deep copy
         tmpBoard[column][row] = "ship";
         this.player.internalBoardState = tmpBoard;
         ++this.placedShips;
@@ -68,7 +88,37 @@ export class BoardSet {
   /**
    * Function to begin a match - it publishes a board-set request message and then sets the done placing variable to true
    */
-  beginMatch() {}
+  beginMatch() {
+    if (this.placedShips == 5) {
+      let boardsetEvent: BoardSetEvent = new BoardSetEvent();
+      boardsetEvent.playerName = this.player.name;
+      boardsetEvent.shipsSet = this.placedShips;
+      //Send the request to set the board
+      this.solaceClient
+        .sendRequest(
+          `${
+            this.topicHelper.prefix
+          }/BOARD-SET-REQUEST/${this.player.getPlayerNameForTopic()}`,
+          JSON.stringify(boardsetEvent),
+          `${
+            this.topicHelper.prefix
+          }/BOARD-SET-REPLY/${this.player.getPlayerNameForTopic()}/CONTROLLER`
+        )
+        .then((msg: any) => {
+          let boardsetResult: BoardSetResult = JSON.parse(
+            msg.getBinaryAttachment()
+          );
+          if (boardsetResult.success) {
+            this.donePlacing = true;
+          } else {
+            this.error = "Board Set Action Failed! Please try again!";
+          }
+        })
+        .catch((err) => {
+          this.error = err;
+        });
+    }
+  }
 
   detached() {
     //Unsubscribe from the .../BOARD/SET/* event
