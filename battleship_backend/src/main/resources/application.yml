@@ -37,7 +37,7 @@ spring:
           move_request:
             consumer:
               #Subscription for the move request queue
-              #queueAdditionalSubscriptions: SOLACE/BATTLESHIP/*/MOVE-REQUEST/*
+              queueAdditionalSubscriptions: SOLACE/BATTLESHIP/*/MOVE-REQUEST/*
 logging:
   level:
     root: INFO

@@ -46,7 +46,7 @@ export class Match {
     this.solaceClient.subscribe(
       `${this.topicHelper.prefix}/MOVE-REPLY/${this.player.getOtherPlayerNameForTopic()}/${this.player.getPlayerNameForTopic()}`,
       // game start event handler callback
-      msg => {
+      (msg) => {
         //De-serialize the move response into a moveResponseEvent object
         let moveResponseEvent: MoveResponseEvent = JSON.parse(msg.getBinaryAttachment());
         //Update the approrpaite score/icons based on the move response
@@ -61,6 +61,20 @@ export class Match {
     );
 
     //Subscribe to the MATCH-END event
+    this.solaceClient.subscribe(
+      `${this.topicHelper.prefix}/MATCH-END/CONTROLLER`,
+      // game start event handler callback
+      (msg) => {
+        let matchEndObj: MatchEnd = JSON.parse(msg.getBinaryAttachment());
+        if (this.player.name == "player1" && matchEndObj.player1Score == 0) {
+          this.router.navigateToRoute("game-over", { msg: "YOU LOSE!" });
+        } else if (this.player.name == "player2" && matchEndObj.player2Score == 0) {
+          this.router.navigateToRoute("game-over", { msg: "YOU LOSE!" });
+        } else {
+          this.router.navigateToRoute("game-over", { msg: "YOU WON!" });
+        }
+      }
+    );
   }
 
   /**
@@ -114,7 +128,7 @@ export class Match {
           //Rotate the turn message
           this.rotateTurnMessage();
         })
-        .catch(failedMessage => {
+        .catch((failedMessage) => {
           console.log(failedMessage);
           this.turnMessage += " ...TRY AGAIN!";
         });
