@@ -122,5 +122,10 @@ export class BoardSet {
 
   detached() {
     //Unsubscribe from the .../BOARD/SET/* event
+    this.solaceClient.unsubscribe(
+      `${
+        this.topicHelper.prefix
+      }/BOARD-SET-REPLY/${this.player.getPlayerNameForTopic()}/CONTROLLER`
+    );
   }
 }
