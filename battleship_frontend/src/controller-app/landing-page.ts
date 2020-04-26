@@ -5,7 +5,7 @@ import {
   GameStart,
   TopicHelper,
   BoardSetEvent,
-  MatchStart
+  MatchStart,
 } from "../common/events";
 import { inject } from "aurelia-framework";
 import { Router } from "aurelia-router";
@@ -47,7 +47,7 @@ export class LandingPage {
       this.solaceClient.subscribe(
         `${this.topicHelper.prefix}/JOIN-REPLY/*/CONTROLLER`,
         // join event handler callback
-        msg => {
+        (msg) => {
           if (msg.getBinaryAttachment()) {
             // parse received event
             let joinResult: JoinResult = JSON.parse(msg.getBinaryAttachment());
@@ -67,7 +67,7 @@ export class LandingPage {
       this.solaceClient.subscribe(
         `${this.topicHelper.prefix}/GAME-START/CONTROLLER`,
         // Game-Start event
-        msg => {
+        (msg) => {
           if (msg.getBinaryAttachment()) {
             let gsObj: GameStart = JSON.parse(msg.getBinaryAttachment());
             this.gameStart.player1 = gsObj.player1;
@@ -79,6 +79,30 @@ export class LandingPage {
       );
 
       //Listening for a BOARD-SET-REPLY events from the battleship-server
+      this.solaceClient.subscribe(
+        `${this.topicHelper.prefix}/BOARD-SET-REPLY/*/CONTROLLER`,
+        // Game-Start event
+        (msg) => {
+          if (msg.getBinaryAttachment()) {
+            let boardSetResult: BoardSetResult = JSON.parse(
+              msg.getBinaryAttachment()
+            );
+            if (boardSetResult.playerName == "player1") {
+              this.player1Status = "Player1 Board Set!";
+            }
+          } else {
+            this.player2Status = "Player2 Board Set!";
+          }
+        }
+      );
+
+      //Listening for a MATCH-START event from the battleship-server
+      this.solaceClient.subscribe(
+        `${this.topicHelper.prefix}/MATCH-START/CONTROLLER`,
+        (msg) => {
+          this.router.navigateToRoute("dashboard");
+        }
+      );
     });
   }
 

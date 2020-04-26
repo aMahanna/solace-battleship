@@ -29,7 +29,7 @@ spring:
           board_set_request:
             consumer:
               #Subscription for the board set request queue
-              # queueAdditionalSubscriptions: SOLACE/BATTLESHIP/*/BOARD-SET-REQUEST/*
+              queueAdditionalSubscriptions: SOLACE/BATTLESHIP/*/BOARD-SET-REQUEST/*
 logging:
   level:
     root: INFO
